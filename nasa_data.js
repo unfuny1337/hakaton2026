@@ -22,7 +22,9 @@ const NASA_DATA = {
       "https://science.nasa.gov/mission/lro/spacecraft-and-instruments/",
       "https://science.nasa.gov/mission/mars-reconnaissance-orbiter/science-instruments/",
       "https://science.nasa.gov/mission/landsat-9/",
-      "https://ntrs.nasa.gov/api/citations/20200002475/downloads/20200002475.pdf",
+      "https://ntrs.nasa.gov/api/citations/20240001680/downloads/HU-CAS-Seminar_2024-02-12.pdf",
+      "https://www.nasa.gov/wp-content/uploads/2024/01/routine-payloads-ea.pdf",
+      "https://ntrs.nasa.gov/api/citations/20210025775/downloads/MIT%20APETS%20Presentation_Paul%20Gradl_Final.pdf",
       "https://www.nasa.gov/smallsat-institute/sst-soa/power-subsystems/",
       "https://www.nasa.gov/smallsat-institute/sst-soa/soa-communications/",
       "https://science.nasa.gov/wp-content/uploads/2024/03/44745_mro-arrival.pdf"
@@ -210,7 +212,7 @@ const NASA_DATA = {
         "cost",
         "reliability"
       ],
-      "nasaSourceUrl": "https://ntrs.nasa.gov/api/citations/20200002475/downloads/20200002475.pdf",
+      "nasaSourceUrl": "https://ntrs.nasa.gov/api/citations/20240001680/downloads/HU-CAS-Seminar_2024-02-12.pdf",
       "gameplayNotes": "Ціна, надійність і коефіцієнти доступності орбіт — ігрові припущення; макс. вантажопідйомність вказана для LEO."
     },
     {
@@ -226,7 +228,7 @@ const NASA_DATA = {
         "cost",
         "reliability"
       ],
-      "nasaSourceUrl": "https://ntrs.nasa.gov/api/citations/20200002475/downloads/20200002475.pdf",
+      "nasaSourceUrl": "https://ntrs.nasa.gov/api/citations/20240001680/downloads/HU-CAS-Seminar_2024-02-12.pdf",
       "gameplayNotes": "Ціна, надійність і коефіцієнти доступності орбіт — ігрові припущення; макс. вантажопідйомність вказана для LEO."
     },
     {
@@ -242,7 +244,7 @@ const NASA_DATA = {
         "cost",
         "reliability"
       ],
-      "nasaSourceUrl": "https://ntrs.nasa.gov/api/citations/20200002475/downloads/20200002475.pdf",
+      "nasaSourceUrl": "https://www.nasa.gov/wp-content/uploads/2024/01/routine-payloads-ea.pdf",
       "gameplayNotes": "Ціна, надійність і коефіцієнти доступності орбіт — ігрові припущення; макс. вантажопідйомність вказана для LEO."
     },
     {
