@@ -1,1 +1,115 @@
-/
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAYLOAD ZERO — PC Part Picker for Spacecraft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="logo"><b>PAYLOAD ZERO</b><span>PC Part Picker for Spacecraft</span></div>
+  <div class="top-ctl">
+    <div class="seg" id="modeSeg">
+      <button data-mode="solo" class="on">Solo</button>
+      <button data-mode="team">Команда (до 4)</button>
+    </div>
+    <input id="importCode" placeholder="Blueprint code…" aria-label="Blueprint code">
+    <button id="importBtn" class="btn sm">Import</button>
+    <button id="homeBtn" class="btn sm ghost" hidden>Missions</button>
+  </div>
+</header>
+
+<main>
+  <section id="s1" class="screen active">
+    <h2 class="h">Mission Briefing — оберіть місію</h2>
+    <div id="missionCards" class="cards3"></div>
+  </section>
+
+  <section id="s2" class="screen">
+    <div class="builder">
+      <aside class="col catalog">
+        <div class="tabs" id="tabs">
+          <button data-tab="launch" class="on">Rocket &amp; Orbit</button>
+          <button data-tab="bus">Bus</button>
+          <button data-tab="inst">Instruments</button>
+        </div>
+        <div id="catalogBody"></div>
+      </aside>
+
+      <section class="col center">
+        <div class="panel">
+          <div class="ptitle" id="missionTitle">Blueprint</div>
+          <svg id="bp" viewBox="0 0 420 300" role="img" aria-label="Spacecraft blueprint">
+            <defs><pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#1E293B" stroke-width=".6"/></pattern></defs>
+            <rect width="420" height="300" fill="url(#g)"/>
+            <text id="lbMeta" x="10" y="16" class="lb meta"></text>
+            <g class="node" data-k="power"><rect x="30" y="135" width="110" height="40"/><rect x="280" y="135" width="110" height="40"/><path d="M58 135v40M85 135v40M112 135v40M308 135v40M335 135v40M362 135v40"/></g>
+            <g class="node" data-k="chassis"><rect x="160" y="100" width="100" height="110"/></g>
+            <g class="node" data-k="comms"><path d="M210 100V72"/><ellipse cx="210" cy="62" rx="30" ry="10"/></g>
+            <g class="node" data-k="propulsion"><polygon points="190,210 230,210 244,248 176,248"/></g>
+            <g class="node" data-k="battery"><rect x="170" y="110" width="38" height="26"/></g>
+            <g class="node" data-k="computer"><rect x="212" y="110" width="38" height="26"/></g>
+            <g class="node" data-k="thermal"><rect x="170" y="176" width="80" height="16"/></g>
+            <g class="node" data-k="inst0"><rect x="20" y="262" width="88" height="24"/></g>
+            <g class="node" data-k="inst1"><rect x="116" y="262" width="88" height="24"/></g>
+            <g class="node" data-k="inst2"><rect x="212" y="262" width="88" height="24"/></g>
+            <g class="node" data-k="inst3"><rect x="308" y="262" width="88" height="24"/></g>
+            <text class="lb" data-l="power" x="30" y="192"></text>
+            <text class="lb" data-l="chassis" x="150" y="94" text-anchor="end"></text>
+            <text class="lb" data-l="comms" x="246" y="58"></text>
+            <text class="lb" data-l="propulsion" x="252" y="236"></text>
+            <text class="lb in" data-l="battery" x="189" y="126" text-anchor="middle"></text>
+            <text class="lb in" data-l="computer" x="231" y="126" text-anchor="middle"></text>
+            <text class="lb in" data-l="thermal" x="210" y="187" text-anchor="middle"></text>
+            <text class="lb in" data-l="inst0" x="64" y="277" text-anchor="middle"></text>
+            <text class="lb in" data-l="inst1" x="160" y="277" text-anchor="middle"></text>
+            <text class="lb in" data-l="inst2" x="256" y="277" text-anchor="middle"></text>
+            <text class="lb in" data-l="inst3" x="352" y="277" text-anchor="middle"></text>
+          </svg>
+        </div>
+        <div class="panel">
+          <div class="ptitle">Чотири голоси в голові</div>
+          <div id="advisors" class="advisors"></div>
+        </div>
+      </section>
+
+      <aside class="col telem">
+        <div class="panel"><div class="ptitle">Telemetry</div><div id="bars"></div></div>
+        <div class="panel"><div class="ptitle">Compatibility</div><div id="diag"></div></div>
+        <button id="launchBtn" class="launch" disabled>LAUNCH MISSION</button>
+      </aside>
+    </div>
+  </section>
+
+  <section id="s3" class="screen">
+    <h2 class="h">Live Mission Simulation</h2>
+    <div id="phaseTrack" class="track"></div>
+    <pre id="termLog" class="term" aria-live="polite"></pre>
+  </section>
+
+  <section id="s4" class="screen">
+    <div id="report"></div>
+  </section>
+</main>
+
+<div id="crisis" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="crTitle">
+  <div class="modal-box">
+    <div class="alarm">⚠ CRISIS EVENT</div>
+    <h3 id="crTitle"></h3>
+    <p id="crDesc"></p>
+    <a id="crSrc" target="_blank" rel="noopener"></a>
+    <div id="crOpts" class="opts"></div>
+  </div>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="nasa_data.js"></script>
+<script src="engine.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
+
