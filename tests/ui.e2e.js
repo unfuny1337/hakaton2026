@@ -206,6 +206,10 @@ async function fullRun(lang) {
       const report = await page.eval('Engine.getBlackBoxReport()');
       assert(report.status === 'SUCCESS', `${missionId}: expected SUCCESS, got ${report.status}`);
       assert(await page.eval('Engine.simulation.phases.length') === 4, '4 phases after the crisis');
+      if (report.rank === 'S') {
+        const tips = await page.eval(`document.querySelector('#report .tips').textContent`);
+        assert(!/higher rank|вищого рангу/.test(tips), `S-rank report suggests a higher rank: ${tips}`);
+      }
       const badge = await page.eval(`document.querySelector('#report .badge').textContent`);
       assert(badge === (lang === 'uk' ? 'УСПІХ' : 'SUCCESS'), `badge text ${badge}`);
       const terminal = await page.eval(`document.getElementById('termLog').textContent`);
@@ -280,6 +284,123 @@ async function strictAndFileMode() {
     await launchToCrisis(page);
     await resolveCrisis(page, 0);
   });
+}
+
+/* ---------- regressions from the independent review (P1, P2, P3) ---------- */
+const TOP_RANK_TIP_BAD = /higher rank|вищого рангу/;
+
+async function relaunchUnchangedBuild() {
+  for (const lang of ['uk', 'en']) {
+    await check(`P1 regression (${lang}): report → Modify without changes → Launch offers the report or an explicit new flight`, async (track) => {
+      const page = track(await openGame({ lang, rolls: [0.01, 0.999] }));
+      await startMission(page, 'm3');
+      await loadPreset(page, 'earth_f9_ka');
+      await launchToCrisis(page);
+      await resolveCrisis(page, 0);
+      const report0 = await page.eval('JSON.stringify([Engine.getBlackBoxReport(), Engine.simulation.survivalRoll])');
+      await page.click('#modBtn');
+      await page.waitFor('PZ_UI.screen() === 2');
+      const label = await page.eval(`document.getElementById('launchBtn').textContent`);
+      assert(label === (lang === 'uk' ? 'НОВИЙ ПОЛІТ' : 'NEW FLIGHT'), `launch label for an already flown build: ${label}`);
+      await assertLanguage(page, lang, 'builder after a finished flight');
+      // 1) cancel keeps everything
+      await page.click('#launchBtn');
+      await page.waitFor(isVisible('#dlg'));
+      await assertLanguage(page, lang, 'already-flown dialog');
+      await page.click('[data-dlg="cancel"]');
+      await page.waitFor(`document.getElementById('dlg').hidden && PZ_UI.screen() === 2`);
+      assert(await page.eval('JSON.stringify([Engine.getBlackBoxReport(), Engine.simulation.survivalRoll])') === report0, 'cancel changed the report');
+      // 2) view the existing report: no new roll, same result
+      await page.click('#launchBtn');
+      await page.waitFor(isVisible('#dlg'));
+      await page.click('[data-dlg="view"]');
+      await page.waitFor('PZ_UI.screen() === 4');
+      assert(await page.eval('JSON.stringify([Engine.getBlackBoxReport(), Engine.simulation.survivalRoll])') === report0, 'viewing changed the report');
+      assert(await page.eval('window.__randomCalls') === 1, 'viewing the report rolled again');
+      assert(!(await page.eval(isVisible('#crisis'))), 'old crisis reopened');
+      // 3) explicit new flight: fresh crisis, a different option resolves normally
+      await page.click('#modBtn');
+      await page.waitFor('PZ_UI.screen() === 2');
+      await page.click('#launchBtn');
+      await page.waitFor(isVisible('#dlg'));
+      await page.click('[data-dlg="new"]');
+      await page.waitFor('PZ_UI.screen() === 3');
+      assert(await page.eval('Engine.getBlackBoxReport() === null && Engine.simulation.resolved === false'), 'new flight did not reset the finished simulation');
+      await page.waitFor(isVisible('#crisis'), { timeout: 20000 });
+      await resolveCrisis(page, 1);
+      const r = await page.eval('Engine.getBlackBoxReport()');
+      assert(r.status === 'FAILED' && r.analysis.optionIndex === 1, `second flight result ${r.status}/${r.analysis.optionIndex}`);
+      assert(await page.eval('window.__randomCalls') === 2, 'exactly one new roll for the new flight');
+      const toast = await page.eval(`document.getElementById('toast').hidden ? '' : document.getElementById('toast').textContent`);
+      assert(!/already resolved|вже розв/.test(toast), `stale crisis error: ${toast}`);
+      assert(!TOP_RANK_TIP_BAD.test(await page.eval(`document.querySelector('#report .tips').textContent`)), 'wrong tip');
+    });
+  }
+}
+
+async function abortWhilePhasesFinish() {
+  await check('P2 regression: an open abort confirmation pauses the flight; cancelling resumes exactly one flight', async (track) => {
+    const page = track(await openGame({ lang: 'en', rolls: [0.01], reducedMotion: false }));
+    await startMission(page, 'm3');
+    await loadPreset(page, 'earth_f9_ka');
+    await page.click('#launchBtn');
+    await page.waitFor('PZ_UI.screen() === 3');
+    await page.click('#abortBtn');
+    await page.waitFor(isVisible('#dlg'));
+    await delay(7500); // longer than all three phases would take
+    assert(!(await page.eval(isVisible('#crisis'))), 'crisis opened over the abort confirmation');
+    assert(await page.eval(`!document.getElementById('dlg').hidden && document.getElementById('dlg').contains(document.activeElement)`), 'abort dialog lost focus');
+    assert(await page.eval(`PZ_UI.flightStage() === 'phases'`), 'flight advanced while paused');
+    await page.click('[data-dlg="cancel"]');
+    await page.waitFor(isVisible('#crisis'), { timeout: 20000, message: 'flight did not resume after cancelling the abort' });
+    assert(await page.eval(`document.getElementById('dlg').hidden`), 'stale abort dialog left open');
+    assert(await page.eval(`document.getElementById('crisis').contains(document.activeElement)`), 'focus not in the crisis');
+    await resolveCrisis(page, 0);
+    assert(await page.eval('window.__randomCalls') === 1 && await page.eval('Engine.simulation.phases.length') === 4, 'more than one flight or resolve');
+  });
+  await check('P2 regression: confirming the abort after the phases would have ended cancels cleanly', async (track) => {
+    const page = track(await openGame({ lang: 'uk', rolls: [0.01], reducedMotion: false }));
+    await startMission(page, 'm3');
+    await loadPreset(page, 'earth_f9_ka');
+    await page.click('#launchBtn');
+    await page.waitFor('PZ_UI.screen() === 3');
+    await page.click('#abortBtn');
+    await page.waitFor(isVisible('#dlg'));
+    await delay(7500);
+    assert(!(await page.eval(isVisible('#crisis'))), 'crisis opened over the abort confirmation');
+    await page.click('[data-dlg="ok"]');
+    await page.waitFor('PZ_UI.screen() === 2');
+    await delay(2000);
+    assert(!(await page.eval(isVisible('#crisis'))) && !(await page.eval(isVisible('#dlg'))), 'a dialog appeared after the abort');
+    assert(await page.eval('Engine.simulation.phases.length === 0 && Engine.simulation.crisis === null'), 'simulation not reset');
+    assert(await page.eval('window.__randomCalls') === 0, 'a roll happened in an aborted flight');
+    await page.click('#launchBtn');
+    await page.waitFor(isVisible('#crisis'), { timeout: 20000 });
+    await resolveCrisis(page, 0);
+    assert(await page.eval('window.__randomCalls') === 1, 'second flight rolled more than once');
+  });
+}
+
+async function draftTimestamps() {
+  const code = 'PZ|1|m3|solo|lv_falcon_med|orb_earth_sso|ch_light|pw_solar_m|bat_highcap|com_kaband|cpu_economy|propulsion_light|thermal_passive|inst_oli2,inst_tirs2';
+  const cases = [['1e20', 1e20, true], ['missing', undefined, true], ['zero', 0, true], ['Date.now', Date.now(), false]];
+  for (const [label, savedAt, unknown] of cases) {
+    await check(`P2 regression: draft with savedAt = ${label} loads, switches language and restores`, async (track) => {
+      const draft = JSON.stringify(savedAt === undefined ? { v: 1, code } : { v: 1, code, savedAt });
+      const page = track(await openGame({ lang: 'en', storage: { 'pz.draft': draft } }));
+      await page.waitFor(isVisible('[data-act="restore-draft"]'));
+      const text = await page.eval(`document.getElementById('draftBanner').textContent`);
+      assert(unknown ? /save time unknown/.test(text) : !/unknown/.test(text), `banner time text: ${text}`);
+      await page.click('#top [data-lang="uk"]');
+      await page.waitFor(`document.documentElement.lang === 'uk'`);
+      const ukText = await page.eval(`document.getElementById('draftBanner').textContent`);
+      assert(unknown ? /час збереження невідомий/.test(ukText) : /Знайдено збережену чернетку/.test(ukText), `uk banner: ${ukText}`);
+      await assertLanguage(page, 'uk', 'draft banner');
+      await page.click('[data-act="restore-draft"]');
+      await page.waitFor('PZ_UI.screen() === 2');
+      assert(await page.eval('Engine.exportBlueprintCode()') === code, 'restored code differs');
+    });
+  }
 }
 
 async function languageSwitching() {
@@ -679,6 +800,9 @@ async function motionAndFonts() {
     await fullRun('en');
     await partialAndFailed();
     await strictAndFileMode();
+    await relaunchUnchangedBuild();
+    await abortWhilePhasesFinish();
+    await draftTimestamps();
     await languageSwitching();
     await doubleClicksAndLocks();
     await abortAndNewFlight();

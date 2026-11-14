@@ -188,6 +188,11 @@
 
   /* ---------- modal stack with focus trap ---------- */
   const modals = [];
+  const quietWaiters = [];
+  /** Resolves once no dialog is open; the flight runner pauses on it so no dialog is ever covered. */
+  function whenNoModals() {
+    return modals.length ? new Promise((resolve) => quietWaiters.push(resolve)) : Promise.resolve();
+  }
   const FOCUSABLE = 'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
   function focusables(root) { return $$(FOCUSABLE, root).filter((el) => !el.closest('[hidden]') && el.offsetParent !== null); }
   function setInert(on) {
@@ -214,6 +219,7 @@
     if (i < 0) return;
     const [entry] = modals.splice(i, 1);
     if (!modals.length) setInert(false);
+    if (!modals.length) quietWaiters.splice(0).forEach((resolve) => resolve());
     const back = entry.lastFocus;
     if (back && document.contains(back) && !back.closest('[hidden]') && !back.disabled) back.focus({ preventScroll: true });
     else if (modals.length) { const f = focusables(modals[modals.length - 1].el)[0]; if (f) f.focus(); }
@@ -244,30 +250,37 @@
     }
   });
 
-  /** Generic confirm dialog; the renderer runs again when the language changes. */
-  function confirmDialog(render) {
-    if (app.dialog && app.dialog.done) app.dialog.done(false);
+  /** Dialog with one or more actions plus Cancel; resolves with the action id or null.
+      The renderer runs again when the language changes. */
+  function choiceDialog(render) {
+    if (app.dialog && app.dialog.done) app.dialog.done(null);
     return new Promise((resolve) => {
       const dialog = {
-        kind: 'confirm',
+        kind: 'choice',
         render() {
           const c = render();
           $('#dlgTitle').textContent = c.title;
           $('#dlgBody').innerHTML = c.body;
-          $('#dlgActions').innerHTML = `<button type="button" class="btn ${c.okClass || ''}" data-dlg="ok" data-fk="dlg:ok">${esc(c.ok)}</button>
-            <button type="button" class="btn ghost" data-dlg="cancel" data-fk="dlg:cancel">${esc(c.cancel || t('common.cancel'))}</button>`;
+          $('#dlgActions').innerHTML = c.actions.map((a) => `<button type="button" class="btn ${a.cls || ''}" data-dlg="${esc(a.id)}" data-fk="dlg:${esc(a.id)}">${esc(a.label)}</button>`).join('')
+            + `<button type="button" class="btn ghost" data-dlg="cancel" data-fk="dlg:cancel">${esc(c.cancel || t('common.cancel'))}</button>`;
         },
         done(value) {
           if (app.dialog !== dialog) return;
           app.dialog = null;
           closeModal($('#dlg'));
-          resolve(value);
+          resolve(value == null || value === false || value === 'cancel' ? null : value);
         }
       };
       app.dialog = dialog;
       dialog.render();
-      openModal($('#dlg'), { initialFocus: $('[data-dlg="cancel"]'), onEscape: () => dialog.done(false) });
+      openModal($('#dlg'), { initialFocus: $('[data-dlg="cancel"]'), onEscape: () => dialog.done(null) });
     });
+  }
+  function confirmDialog(render) {
+    return choiceDialog(() => {
+      const c = render();
+      return { title: c.title, body: c.body, cancel: c.cancel, actions: [{ id: 'ok', label: c.ok, cls: c.okClass }] };
+    }).then((id) => id === 'ok');
   }
 
   /* ---------- screen 1: briefing ---------- */
@@ -335,9 +348,7 @@
         <div class="row"><button type="button" class="btn sm" data-act="continue-build" data-fk="continue-build">${esc(t('draft.continue'))}</button></div>`);
     }
     if (d.pending) {
-      const when = d.pending.savedAt
-        ? new Intl.DateTimeFormat(I.locale(), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(d.pending.savedAt))
-        : t('common.none');
+      const when = formatSavedAt(d.pending.savedAt);
       parts.push(`<p>${esc(t('draft.found', { mission: t(`data.mission.${d.pending.missionId}.short`), time: when }))}</p>
         <div class="row"><button type="button" class="btn sm" data-act="restore-draft" data-fk="restore-draft">${esc(t('draft.restore'))}</button>
         <button type="button" class="btn sm ghost" data-act="discard-draft" data-fk="discard-draft">${esc(t('draft.discard'))}</button></div>`);
@@ -376,6 +387,19 @@
   }
 
   /* ---------- drafts ---------- */
+  const MAX_DATE_MS = 8.64e15; // ECMAScript Date range; e.g. 1e20 would be an Invalid Date
+  function validTimestamp(value) {
+    const n = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(n) && n > 0 && n <= MAX_DATE_MS && !Number.isNaN(new Date(n).getTime()) ? n : null;
+  }
+  function formatSavedAt(ts) {
+    if (!ts) return t('draft.timeUnknown');
+    try {
+      return new Intl.DateTimeFormat(I.locale(), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(ts));
+    } catch (_) {
+      return t('draft.timeUnknown');
+    }
+  }
   function loadDraft() {
     app.draft.storageOk = store.ok();
     const raw = store.get(KEYS.draft);
@@ -384,7 +408,7 @@
       const saved = JSON.parse(raw);
       if (!saved || typeof saved.code !== 'string') throw new Error('bad draft shape');
       const parsed = E.validateBlueprintCode(saved.code);
-      app.draft.pending = { code: saved.code, savedAt: Number(saved.savedAt) || null, missionId: parsed.missionId };
+      app.draft.pending = { code: saved.code, savedAt: validTimestamp(saved.savedAt), missionId: parsed.missionId };
     } catch (error) {
       app.draft.error = error; // rendered later, so the reason follows the current language
     }
@@ -829,6 +853,9 @@
     if (!team.ready) {
       return { disabled: true, risky: false, label: t('launch.team', { a: team.approved, b: team.size }), short: t('qb.team'), hint: t('launch.hintTeam') };
     }
+    if (E.getBlackBoxReport()) {
+      return { disabled: false, risky: c.warnings.length > 0, label: t('launch.again'), short: t('qb.launch'), hint: t('launch.hintAgain') };
+    }
     if (c.warnings.length) {
       return { disabled: false, risky: true, label: t('launch.risky', { n: c.warnings.length }), short: t('qb.launch'), hint: t('launch.hintRisky') };
     }
@@ -1081,12 +1108,20 @@
   }
 
   /* ---------- screen 3: flight ---------- */
-  function wait(flight, ms) {
+  /** Pauses while any dialog is open (e.g. "Abort the flight?"), then waits ms. Resolves false if cancelled. */
+  async function wait(flight, ms) {
+    while (modals.length && !flight.cancelled) await whenNoModals();
+    if (flight.cancelled) return false;
     return new Promise((resolve) => {
-      if (flight.cancelled) { resolve(false); return; }
       const id = setTimeout(() => { flight.timers.delete(id); resolve(!flight.cancelled); }, ms);
-      flight.timers.add(id);
+      flight.timers.set(id, resolve);
     });
+  }
+  function cancelFlight(flight) {
+    flight.cancelled = true;
+    flight.timers.forEach((resolve, id) => { clearTimeout(id); resolve(false); });
+    flight.timers.clear();
+    quietWaiters.splice(0).forEach((resolve) => resolve());
   }
   const delays = () => (reduceMotion() ? { line: 30, status: 40, gap: 60, end: 120 } : { line: 380, status: 650, gap: 450, end: 1100 });
 
@@ -1096,6 +1131,19 @@
     app.state = E.getState();
     const view = launchView();
     if (view.disabled) { toast(view.hint); return; }
+    // An unchanged build keeps its finished flight (the engine is idempotent). Re-flying it is an
+    // explicit choice: view the existing report, or reset and fly again with a new roll.
+    const sim = E.simulation;
+    let resetFirst = !!sim.crisis && !sim.resolved; // stale unresolved flight: always start clean
+    if (sim.resolved && E.getBlackBoxReport()) {
+      const choice = await choiceDialog(() => ({
+        title: t('again.title'), body: `<p>${esc(t('again.body'))}</p>`,
+        actions: [{ id: 'new', label: t('again.new') }, { id: 'view', label: t('again.view'), cls: 'ghost' }]
+      }));
+      if (choice === 'view') { go(4); renderReport(); return; }
+      if (choice !== 'new' || app.flight) return;
+      resetFirst = true;
+    }
     const warnings = app.state.compatibility.warnings;
     if (warnings.length) {
       const f = designFactor();
@@ -1111,7 +1159,8 @@
       }));
       if (!ok || app.flight) return;
     }
-    const flight = { id: ++flightSeq, stage: 'phases', events: [], timers: new Set(), cancelled: false, current: 0 };
+    if (resetFirst) { E.resetSimulation(); app.lastFlight = null; }
+    const flight = { id: ++flightSeq, stage: 'phases', events: [], timers: new Map(), cancelled: false, current: 0 };
     app.flight = flight;
     try {
       E.startSimulation();
@@ -1149,6 +1198,8 @@
     for (let i = 0; i < 3; i += 1) {
       if (!(await playPhase(flight, i))) return;
     }
+    while (modals.length && !flight.cancelled) await whenNoModals(); // never open the crisis over another dialog
+    if (flight.cancelled) return;
     flight.events.push({ type: 'anomaly' });
     flight.stage = 'crisis';
     renderFlight();
@@ -1156,9 +1207,8 @@
   }
 
   function flightCrash(flight, error) {
-    flight.cancelled = true;
-    flight.timers.forEach(clearTimeout);
-    flight.timers.clear();
+    cancelFlight(flight);
+    if (app.dialog && app.dialog.done) app.dialog.done(null);
     if (app.flight === flight) app.flight = null;
     try { E.resetSimulation(); } catch (_) { /* keep going: the build is untouched */ }
     if (!$('#crisis').hidden) closeModal($('#crisis'));
@@ -1174,9 +1224,7 @@
       title: t('confirm.abort.title'), body: `<p>${esc(t('confirm.abort.body'))}</p>`, ok: t('confirm.abort.ok'), okClass: 'warn'
     }));
     if (!ok || app.flight !== flight || flight.stage === 'downlink' || flight.stage === 'done') return;
-    flight.cancelled = true;
-    flight.timers.forEach(clearTimeout);
-    flight.timers.clear();
+    cancelFlight(flight);
     if (!$('#crisis').hidden) closeModal($('#crisis'));
     app.flight = null;
     E.resetSimulation();
@@ -1368,7 +1416,11 @@
       if (locked.length) tips.push(t('tip.locked', { need: num(locked[0].requiredRadResistance) }));
     }
     if (r.status === 'SUCCESS' && r.rank !== 'S') tips.push(t('tip.reserve', { b: num(a.score.budgetReserve * 100, 0), tm: num(a.score.timeReserve * 100, 0) }));
-    if (!tips.length) tips.push(t('tip.none'));
+    if (!tips.length) {
+      if (r.status === 'FAILED') tips.push(t('tip.retry'));
+      else if (r.rank === 'S') tips.push(r.finalScore >= 100 ? t('tip.perfect') : t('tip.topRank', { n: 100 - r.finalScore }));
+      else tips.push(t('tip.none'));
+    }
     return tips;
   }
 
@@ -1479,7 +1531,7 @@
     const dlgBtn = event.target.closest('[data-dlg]');
     if (dlgBtn && app.dialog) {
       const action = dlgBtn.dataset.dlg;
-      if (app.dialog.kind === 'confirm') app.dialog.done(action === 'ok');
+      if (app.dialog.kind === 'choice') app.dialog.done(action);
       else act(() => tutorialAction(action));
       return;
     }

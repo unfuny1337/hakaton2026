@@ -162,7 +162,12 @@ Results on 2026-11-14 (Windows 10, Node 26.13.1, Microsoft Edge 157):
 
 - `check:syntax`: 15 files pass.
 - `test:unit`: **37 / 37 pass**: 20 engine, 10 i18n, 7 balance.
-- `test:e2e`: **24 / 24 pass.** Coverage:
+- `test:e2e`: **32 / 32 pass.** Coverage:
+  - regressions from the independent review, each in its own check:
+    - launching an unchanged build after Modify (both languages) offers *View the report* or an explicit *New flight*, never the old resolved crisis;
+    - an open *Abort the flight?* confirmation pauses the flight, so the crisis never covers it; both the cancel and confirm branches are tested;
+    - drafts with a missing, zero or out-of-range `savedAt` (e.g. 1e20) load, switch language and restore;
+    - an S-rank report never suggests a “higher rank”;
   - full Ukrainian and English runs of all three missions to the report;
   - PARTIAL and FAILED reports in both languages;
   - strict i18n mode (`?dev=1`) through the tutorial, team panel, previews, flight and report in both languages with no missing key or parameter;
