@@ -4,6 +4,8 @@
  * Parameters in gameOnlyFields are illustrative game assumptions, not NASA specifications.
  * Launch maxPayloadKg refers to LEO and does NOT validate transfers to the Moon or Mars.
  * Original design constraints: exactly 3 missions, 4 launchers, 4 orbits, 8 instruments, 3 crises.
+ * Items with origin: "game" are game components added for balance; they are not NASA hardware.
+ * Visible names/descriptions are localized in i18n.js by stable ID; strings here stay as the source data.
  */
 const NASA_DATA = {
   "metadata": {
@@ -34,7 +36,12 @@ const NASA_DATA = {
       "Added alternative spacecraft components for every category; all chosen component performance values are illustrative.",
       "Added stronger solar-array option; NASA MRO reference produces about 2000 W at farthest Sun distance, whereas this 1400 W game array is not asserted to be original MRO hardware.",
       "Changed SLS cost from 2000 to 320 million game USD; this is not an actual NASA cost.",
-      "Kept exactly 4 NASA-named launchers, so their LEO capacities are not changed just to force gameplay choice. The engine may need per-destination launch feasibility, not a simple multiplier."
+      "Kept exactly 4 NASA-named launchers, so their LEO capacities are not changed just to force gameplay choice. The engine may need per-destination launch feasibility, not a simple multiplier.",
+      "Balance pass 2 (game-only fields): mission time limits are now binding (Moon 38, Mars 50, Earth 30 months) and every part/instrument/launcher has a lead time, so the slowest item on the critical path can push a mission over its schedule.",
+      "Added launcher prepTimeMonths as a game assumption (manifest and integration lead time): Falcon 9 4, Atlas V 5, Falcon Heavy 8, SLS 16 months.",
+      "Atlas V 551 game cost 125 -> 110 and game reliability 0.98 -> 0.995: in the game it is the most reliable launcher (historical context: LRO, MRO and Landsat 9 all launched on Atlas V 401). LEO capacity is unchanged.",
+      "Mars science orbit game massPenaltyMultiplier 0.12 -> 0.25 so that Falcon Heavy can carry a lean Mars spacecraft; SLS remains the option for heavy Mars builds. Real LEO capacities are unchanged.",
+      "Added game component ch_shielded (radiation resistance 4). It makes radiation level 4 (Mars) and the shielded lunar crisis option reachable at a cost in mass, budget and lead time."
     ]
   },
   "missions": [
@@ -44,11 +51,11 @@ const NASA_DATA = {
       "targetBody": "Moon",
       "description": "Картографування поверхні Місяця, полярного освітлення, температур і потенційних запасів льоду.",
       "maxBudget": 450,
-      "maxTimeMonths": 48,
+      "maxTimeMonths": 38,
       "requiredOrbitId": "orb_lunar_polar",
       "minScienceScore": 110,
       "radiationLevel": 3,
-      "solarEfficiency": 1.0,
+      "solarEfficiency": 1,
       "verifiedSpecs": {
         "launchDate": "2009-06-18",
         "initialScienceOrbitAltitudeKm": 50,
@@ -69,7 +76,7 @@ const NASA_DATA = {
       "targetBody": "Mars",
       "description": "Дослідження поверхні Марса, мінералів, атмосферних умов та підповерхневого льоду.",
       "maxBudget": 700,
-      "maxTimeMonths": 72,
+      "maxTimeMonths": 50,
       "requiredOrbitId": "orb_mars_polar",
       "minScienceScore": 115,
       "radiationLevel": 4,
@@ -94,11 +101,11 @@ const NASA_DATA = {
       "targetBody": "Earth",
       "description": "Моніторинг поверхні Землі за допомогою оптичних та теплових спектральних спостережень.",
       "maxBudget": 400,
-      "maxTimeMonths": 48,
+      "maxTimeMonths": 30,
       "requiredOrbitId": "orb_earth_sso",
       "minScienceScore": 100,
       "radiationLevel": 2,
-      "solarEfficiency": 1.0,
+      "solarEfficiency": 1,
       "verifiedSpecs": {
         "launchDate": "2021-09-27",
         "orbitAltitudeKm": 705,
@@ -140,7 +147,7 @@ const NASA_DATA = {
       "targetBody": "Mars",
       "altitudeKmMin": 255,
       "altitudeKmMax": 320,
-      "massPenaltyMultiplier": 0.12,
+      "massPenaltyMultiplier": 0.25,
       "commWindowHoursPerDay": 6,
       "eclipseRatio": 0.3,
       "verifiedSpecs": {
@@ -204,13 +211,15 @@ const NASA_DATA = {
       "cost": 70,
       "maxPayloadKg": 22800,
       "reliability": 0.98,
+      "prepTimeMonths": 4,
       "verifiedSpecs": {
         "payloadToLEOKg": 22800,
         "configuration": "Falcon 9 Block 5"
       },
       "gameOnlyFields": [
         "cost",
-        "reliability"
+        "reliability",
+        "prepTimeMonths"
       ],
       "nasaSourceUrl": "https://ntrs.nasa.gov/api/citations/20240001680/downloads/HU-CAS-Seminar_2024-02-12.pdf",
       "gameplayNotes": "Ціна, надійність і коефіцієнти доступності орбіт — ігрові припущення; макс. вантажопідйомність вказана для LEO."
@@ -221,12 +230,14 @@ const NASA_DATA = {
       "cost": 125,
       "maxPayloadKg": 63800,
       "reliability": 0.97,
+      "prepTimeMonths": 8,
       "verifiedSpecs": {
         "payloadToLEOKg": 63800
       },
       "gameOnlyFields": [
         "cost",
-        "reliability"
+        "reliability",
+        "prepTimeMonths"
       ],
       "nasaSourceUrl": "https://ntrs.nasa.gov/api/citations/20240001680/downloads/HU-CAS-Seminar_2024-02-12.pdf",
       "gameplayNotes": "Ціна, надійність і коефіцієнти доступності орбіт — ігрові припущення; макс. вантажопідйомність вказана для LEO."
@@ -234,15 +245,17 @@ const NASA_DATA = {
     {
       "id": "lv_atlas_v",
       "name": "Atlas V 551",
-      "cost": 125,
+      "cost": 110,
       "maxPayloadKg": 18500,
-      "reliability": 0.98,
+      "reliability": 0.995,
+      "prepTimeMonths": 5,
       "verifiedSpecs": {
         "payloadToLEOKg": 18500
       },
       "gameOnlyFields": [
         "cost",
-        "reliability"
+        "reliability",
+        "prepTimeMonths"
       ],
       "nasaSourceUrl": "https://www.nasa.gov/wp-content/uploads/2024/01/routine-payloads-ea.pdf",
       "gameplayNotes": "Ціна, надійність і коефіцієнти доступності орбіт — ігрові припущення; макс. вантажопідйомність вказана для LEO."
@@ -253,13 +266,15 @@ const NASA_DATA = {
       "cost": 320,
       "maxPayloadKg": 95000,
       "reliability": 0.97,
+      "prepTimeMonths": 16,
       "verifiedSpecs": {
         "payloadToLEOKg": 95000,
         "payloadToMoonTLIKg": "more than 27000"
       },
       "gameOnlyFields": [
         "cost",
-        "reliability"
+        "reliability",
+        "prepTimeMonths"
       ],
       "nasaSourceUrl": "https://www.nasa.gov/reference/space-launch-system/",
       "gameplayNotes": "Ціна, надійність і коефіцієнти доступності орбіт — ігрові припущення; макс. вантажопідйомність вказана для LEO."
@@ -358,7 +373,7 @@ const NASA_DATA = {
       "batteryCapacity": 0,
       "dataTransferRate": 25,
       "radiationResistance": 4,
-      "prepTimeMonths": 5,
+      "prepTimeMonths": 6,
       "verifiedSpecs": {
         "subsystemType": "High-Gain Antenna / Communications Subsystem"
       },
@@ -385,7 +400,7 @@ const NASA_DATA = {
       "batteryCapacity": 0,
       "dataTransferRate": 0,
       "radiationResistance": 4,
-      "prepTimeMonths": 6,
+      "prepTimeMonths": 9,
       "verifiedSpecs": {
         "subsystemType": "Command and Data Handling / Attitude Control"
       },
@@ -439,7 +454,7 @@ const NASA_DATA = {
       "batteryCapacity": 0,
       "dataTransferRate": 0,
       "radiationResistance": 3,
-      "prepTimeMonths": 5,
+      "prepTimeMonths": 6,
       "verifiedSpecs": {
         "subsystemType": "Spacecraft Thermal Control Subsystem"
       },
@@ -466,7 +481,7 @@ const NASA_DATA = {
       "batteryCapacity": 0,
       "dataTransferRate": 0,
       "radiationResistance": 2,
-      "prepTimeMonths": 6,
+      "prepTimeMonths": 5,
       "verifiedSpecs": {
         "subsystemType": "Lightweight Aluminum Spacecraft Structure"
       },
@@ -483,6 +498,33 @@ const NASA_DATA = {
       "nasaSourceUrl": "https://www.nasa.gov/smallsat-institute/sst-soa/structures-materials-and-mechanisms/"
     },
     {
+      "id": "ch_shielded",
+      "category": "chassis",
+      "name": "Radiation-Shielded Spacecraft Structure (game component)",
+      "mass": 400,
+      "cost": 34,
+      "powerGeneration": 0,
+      "powerConsumption": 15,
+      "batteryCapacity": 0,
+      "dataTransferRate": 0,
+      "radiationResistance": 4,
+      "prepTimeMonths": 13,
+      "origin": "game",
+      "verifiedSpecs": {},
+      "gameOnlyFields": [
+        "mass",
+        "cost",
+        "powerGeneration",
+        "powerConsumption",
+        "batteryCapacity",
+        "dataTransferRate",
+        "radiationResistance",
+        "prepTimeMonths"
+      ],
+      "nasaSourceUrl": "https://www.nasa.gov/smallsat-institute/sst-soa/structures-materials-and-mechanisms/",
+      "gameplayNotes": "Game component added for balance: an illustrative shielded structure, not a specific NASA hardware item. The NASA link is background reading on spacecraft structures, not a source for these numbers."
+    },
+    {
       "id": "pw_solar_l",
       "category": "power",
       "name": "High-Efficiency Deep Space Solar Array (MRO-inspired)",
@@ -493,7 +535,7 @@ const NASA_DATA = {
       "batteryCapacity": 0,
       "dataTransferRate": 0,
       "radiationResistance": 4,
-      "prepTimeMonths": 9,
+      "prepTimeMonths": 12,
       "verifiedSpecs": {
         "subsystemType": "Spacecraft solar arrays",
         "referenceMission": "Mars Reconnaissance Orbiter",
@@ -522,7 +564,7 @@ const NASA_DATA = {
       "batteryCapacity": 900,
       "dataTransferRate": 0,
       "radiationResistance": 4,
-      "prepTimeMonths": 6,
+      "prepTimeMonths": 7,
       "verifiedSpecs": {
         "subsystemType": "High-Capacity Redundant Spacecraft Battery"
       },
@@ -549,7 +591,7 @@ const NASA_DATA = {
       "batteryCapacity": 0,
       "dataTransferRate": 45,
       "radiationResistance": 4,
-      "prepTimeMonths": 7,
+      "prepTimeMonths": 11,
       "verifiedSpecs": {
         "subsystemType": "Ka-Band High-Rate Communications Subsystem"
       },
@@ -687,7 +729,7 @@ const NASA_DATA = {
       "compatibleTargets": [
         "Moon"
       ],
-      "prepTimeMonths": 10,
+      "prepTimeMonths": 9,
       "nasaInfo": "Лазерний висотомір LRO створює топографічні карти місячної поверхні.",
       "verifiedSpecs": {},
       "gameOnlyFields": [
@@ -737,7 +779,7 @@ const NASA_DATA = {
       "compatibleTargets": [
         "Moon"
       ],
-      "prepTimeMonths": 10,
+      "prepTimeMonths": 12,
       "nasaInfo": "Камери LRO отримують детальні знімки поверхні Місяця та районів посадки.",
       "verifiedSpecs": {},
       "gameOnlyFields": [
@@ -762,7 +804,7 @@ const NASA_DATA = {
       "compatibleTargets": [
         "Mars"
       ],
-      "prepTimeMonths": 10,
+      "prepTimeMonths": 14,
       "nasaInfo": "Камера MRO з високою роздільною здатністю фотографує рельєф Марса.",
       "verifiedSpecs": {
         "massKg": 65,
@@ -789,7 +831,7 @@ const NASA_DATA = {
       "compatibleTargets": [
         "Mars"
       ],
-      "prepTimeMonths": 10,
+      "prepTimeMonths": 12,
       "nasaInfo": "Спектрометр MRO визначає мінеральний склад поверхні Марса.",
       "verifiedSpecs": {
         "massKg": 32.92,
@@ -853,7 +895,7 @@ const NASA_DATA = {
       "compatibleTargets": [
         "Earth"
       ],
-      "prepTimeMonths": 10,
+      "prepTimeMonths": 12,
       "nasaInfo": "Оптичний сенсор Landsat 9 відстежує рослинність, воду й зміни земної поверхні.",
       "verifiedSpecs": {
         "spectralBands": 9,
@@ -882,7 +924,7 @@ const NASA_DATA = {
       "compatibleTargets": [
         "Earth"
       ],
-      "prepTimeMonths": 9,
+      "prepTimeMonths": 10,
       "nasaInfo": "Тепловий інфрачервоний прилад Landsat 9 для вимірювання температури земної поверхні у двох спектральних каналах.",
       "verifiedSpecs": {
         "spectralBands": 2,

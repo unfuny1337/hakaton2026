@@ -1,49 +1,67 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PAYLOAD ZERO — PC Part Picker for Spacecraft</title>
+<title>PAYLOAD ZERO</title>
+<meta name="description" content="PAYLOAD ZERO — space mission design game">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="top">
-  <div class="logo"><b>PAYLOAD ZERO</b><span>PC Part Picker for Spacecraft</span></div>
-  <div class="top-ctl">
-    <div class="seg" id="modeSeg">
-      <button data-mode="solo" class="on">Solo</button>
-      <button data-mode="team">Команда (до 4)</button>
+<a class="skip" href="#main" data-i18n="a11y.skip">Skip to content</a>
+<header class="top" id="top">
+  <div class="logo"><b>PAYLOAD ZERO</b><span data-i18n="app.tagline"></span></div>
+  <div class="top-ctl" role="group" data-i18n-attr="aria-label:hdr.controls">
+    <div class="seg lang-seg" role="group" data-i18n-attr="aria-label:lang.group">
+      <button type="button" data-lang="uk" lang="uk" data-i18n-attr="aria-label:lang.uk;title:lang.uk">УКР</button>
+      <button type="button" data-lang="en" lang="en" data-i18n-attr="aria-label:lang.en;title:lang.en">ENG</button>
     </div>
-    <input id="importCode" placeholder="Blueprint code…" aria-label="Blueprint code">
-    <button id="importBtn" class="btn sm">Import</button>
-    <button id="homeBtn" class="btn sm ghost" hidden>Missions</button>
+    <div class="seg" id="modeSeg" role="group" data-i18n-attr="aria-label:mode.group">
+      <button type="button" data-mode="solo" class="on" aria-pressed="true" data-i18n="mode.solo">Solo</button>
+      <button type="button" data-mode="team" aria-pressed="false" data-i18n="mode.team">Team</button>
+    </div>
+    <button type="button" id="helpBtn" class="btn sm ghost" data-i18n="hdr.help">Tutorial</button>
+    <button type="button" id="shareBtn" class="btn sm ghost" data-i18n="hdr.share">Blueprint code</button>
+    <button type="button" id="homeBtn" class="btn sm ghost" hidden data-i18n="hdr.missions">Missions</button>
   </div>
 </header>
 
-<main>
-  <section id="s1" class="screen active">
-    <h2 class="h">Mission Briefing — оберіть місію</h2>
+<main id="main" tabindex="-1">
+  <section id="s1" class="screen active" aria-labelledby="s1Title">
+    <h1 class="h" id="s1Title" data-i18n="s1.title">Mission briefing</h1>
+    <p class="lead" data-i18n="s1.intro"></p>
+    <div id="draftBanner" class="banner" hidden></div>
+    <div class="beginner panel">
+      <p data-i18n="s1.beginner"></p>
+      <div class="row">
+        <button type="button" id="startEarthBtn" class="btn" data-i18n="s1.startEarth"></button>
+        <button type="button" id="tutorialBtn" class="btn ghost" data-i18n="s1.tutorial"></button>
+      </div>
+    </div>
     <div id="missionCards" class="cards3"></div>
   </section>
 
-  <section id="s2" class="screen">
+  <section id="s2" class="screen" aria-labelledby="missionTitle">
     <div class="builder">
-      <aside class="col catalog">
-        <div class="tabs" id="tabs">
-          <button data-tab="launch" class="on">Rocket &amp; Orbit</button>
-          <button data-tab="bus">Bus</button>
-          <button data-tab="inst">Instruments</button>
+      <aside class="col catalog" id="catalog" data-i18n-attr="aria-label:catalog.aria">
+        <div class="tabs" id="tabs" role="tablist" data-i18n-attr="aria-label:catalog.tabs">
+          <button type="button" role="tab" id="tab-launch" data-tab="launch" aria-controls="catalogBody" class="on" aria-selected="true" data-i18n="tab.launch"></button>
+          <button type="button" role="tab" id="tab-bus" data-tab="bus" aria-controls="catalogBody" aria-selected="false" tabindex="-1" data-i18n="tab.bus"></button>
+          <button type="button" role="tab" id="tab-inst" data-tab="inst" aria-controls="catalogBody" aria-selected="false" tabindex="-1" data-i18n="tab.inst"></button>
         </div>
-        <div id="catalogBody"></div>
+        <p class="legend" data-i18n="legend.marks"></p>
+        <div id="catalogBody" role="tabpanel" aria-labelledby="tab-launch"></div>
       </aside>
 
       <section class="col center">
         <div class="panel">
-          <div class="ptitle" id="missionTitle">Blueprint</div>
-          <svg id="bp" viewBox="0 0 420 300" role="img" aria-label="Spacecraft blueprint">
+          <h2 class="ptitle" id="missionTitle">Blueprint</h2>
+          <p id="goalLine" class="goal"></p>
+          <svg id="bp" viewBox="0 0 420 300" role="img" aria-labelledby="bpDesc">
+            <title id="bpDesc"></title>
             <defs><pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#1E293B" stroke-width=".6"/></pattern></defs>
             <rect width="420" height="300" fill="url(#g)"/>
             <text id="lbMeta" x="10" y="16" class="lb meta"></text>
@@ -71,45 +89,106 @@
             <text class="lb in" data-l="inst3" x="352" y="277" text-anchor="middle"></text>
           </svg>
         </div>
+        <div class="panel" id="teamPanel" hidden></div>
+        <div class="panel" id="presetPanel"></div>
         <div class="panel">
-          <div class="ptitle">Чотири голоси в голові</div>
+          <h2 class="ptitle" data-i18n="adv.panel"></h2>
           <div id="advisors" class="advisors"></div>
         </div>
+        <div class="panel" id="sharePanel"></div>
       </section>
 
-      <aside class="col telem">
-        <div class="panel"><div class="ptitle">Telemetry</div><div id="bars"></div></div>
-        <div class="panel"><div class="ptitle">Compatibility</div><div id="diag"></div></div>
-        <button id="launchBtn" class="launch" disabled>LAUNCH MISSION</button>
+      <aside class="col telem" id="telem" data-i18n-attr="aria-label:tel.aria">
+        <div class="panel"><h2 class="ptitle" data-i18n="slots.title"></h2><div id="slots" class="slots"></div></div>
+        <div class="panel"><h2 class="ptitle" data-i18n="tel.title"></h2><div id="bars"></div></div>
+        <div class="panel"><h2 class="ptitle" data-i18n="diag.title"></h2><div id="diag" aria-live="polite"></div></div>
+        <button type="button" id="launchBtn" class="launch" disabled aria-describedby="launchHint">LAUNCH</button>
+        <p id="launchHint" class="hint"></p>
       </aside>
+    </div>
+    <div id="quickBar" class="quickbar" data-i18n-attr="aria-label:qb.aria">
+      <div id="qbStats" class="qb-stats"></div>
+      <button type="button" id="qbCheck" class="btn sm ghost" data-i18n="qb.check"></button>
+      <button type="button" id="qbLaunch" class="btn sm"></button>
     </div>
   </section>
 
-  <section id="s3" class="screen">
-    <h2 class="h">Live Mission Simulation</h2>
-    <div id="phaseTrack" class="track"></div>
-    <pre id="termLog" class="term" aria-live="polite"></pre>
+  <section id="s3" class="screen" aria-labelledby="s3Title">
+    <h1 class="h" id="s3Title" data-i18n="s3.title"></h1>
+    <p class="hint" data-i18n="s3.lockNote"></p>
+    <ol id="phaseTrack" class="track" data-i18n-attr="aria-label:s3.track"></ol>
+    <pre id="termLog" class="term" aria-live="polite" tabindex="0" data-i18n-attr="aria-label:s3.log"></pre>
+    <div class="row">
+      <button type="button" id="abortBtn" class="btn ghost" data-i18n="s3.abort"></button>
+      <button type="button" id="toReportBtn" class="btn" hidden data-i18n="s3.report"></button>
+    </div>
   </section>
 
-  <section id="s4" class="screen">
+  <section id="s4" class="screen" aria-labelledby="repTitle">
     <div id="report"></div>
   </section>
 </main>
 
-<div id="crisis" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="crTitle">
-  <div class="modal-box">
-    <div class="alarm">⚠ CRISIS EVENT</div>
-    <h3 id="crTitle"></h3>
+<div id="crisis" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="crTitle" aria-describedby="crDesc">
+  <div class="modal-box crisis-box">
+    <div class="modal-head">
+      <div class="alarm" data-i18n="cr.alarm"></div>
+      <div class="seg lang-seg mini" role="group" data-i18n-attr="aria-label:lang.group">
+        <button type="button" data-lang="uk" lang="uk" data-i18n-attr="aria-label:lang.uk;title:lang.uk">УКР</button>
+        <button type="button" data-lang="en" lang="en" data-i18n-attr="aria-label:lang.en;title:lang.en">ENG</button>
+      </div>
+    </div>
+    <h2 id="crTitle"></h2>
     <p id="crDesc"></p>
     <a id="crSrc" target="_blank" rel="noopener"></a>
-    <div id="crOpts" class="opts"></div>
+    <div id="crTeam" class="cr-team" hidden></div>
+    <p class="hint" id="crHint"></p>
+    <div id="crOpts" class="opts" role="group" aria-labelledby="crHint"></div>
+    <div class="row"><button type="button" id="crConfirm" class="btn" disabled></button></div>
   </div>
 </div>
-<div id="toast" class="toast" hidden></div>
+
+<div id="dlg" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+  <div class="modal-box plain">
+    <div class="modal-head">
+      <h2 id="dlgTitle"></h2>
+      <div class="seg lang-seg mini" role="group" data-i18n-attr="aria-label:lang.group">
+        <button type="button" data-lang="uk" lang="uk" data-i18n-attr="aria-label:lang.uk;title:lang.uk">УКР</button>
+        <button type="button" data-lang="en" lang="en" data-i18n-attr="aria-label:lang.en;title:lang.en">ENG</button>
+      </div>
+    </div>
+    <div id="dlgBody"></div>
+    <div class="row" id="dlgActions"></div>
+  </div>
+</div>
+
+<div id="shareDlg" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+  <div class="modal-box plain">
+    <div class="modal-head">
+      <h2 id="shareTitle" data-i18n="share.title"></h2>
+      <div class="seg lang-seg mini" role="group" data-i18n-attr="aria-label:lang.group">
+        <button type="button" data-lang="uk" lang="uk" data-i18n-attr="aria-label:lang.uk;title:lang.uk">УКР</button>
+        <button type="button" data-lang="en" lang="en" data-i18n-attr="aria-label:lang.en;title:lang.en">ENG</button>
+      </div>
+    </div>
+    <div id="shareExport"></div>
+    <label for="importCode" class="lbl" data-i18n="share.importLabel"></label>
+    <textarea id="importCode" class="code" rows="3" spellcheck="false" autocomplete="off" data-i18n-attr="placeholder:share.placeholder"></textarea>
+    <p class="hint" id="importHint" data-i18n="share.importHint"></p>
+    <div class="row">
+      <button type="button" id="importBtn" class="btn" data-i18n="share.import"></button>
+      <button type="button" id="shareClose" class="btn ghost" data-i18n="common.close"></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="nasa_data.js"></script>
+<script src="i18n.js"></script>
+<script src="i18n-dict.js"></script>
 <script src="engine.js"></script>
+<script src="presets.js"></script>
 <script src="ui.js"></script>
 </body>
 </html>
-
