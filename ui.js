@@ -62,6 +62,109 @@
     dialog: null
   };
   let flightSeq = 0;
+  let instantRender = false;
+  let flashTimer = 0;
+  let flashNode = null;
+  let barsFrame = 0;
+  let scoreFrame = 0;
+  let scoreTarget = null;
+  const scoredFlights = new Set();
+  const terminalPaint = { frame: 0, target: '', flight: null, lang: null };
+  const icon = (name, cls = '') => '<svg class="ui-icon ' + cls + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#icon-' + name + '"/></svg>';
+
+  function clearFlash() {
+    clearTimeout(flashTimer);
+    if (flashNode) flashNode.classList.remove('flash-target');
+    flashNode = null;
+  }
+
+  function stopTerminal(flush = true) {
+    cancelAnimationFrame(terminalPaint.frame);
+    terminalPaint.frame = 0;
+    const log = $('#termLog');
+    if (!log) return;
+    log.classList.remove('typing');
+    if (flush) log.textContent = terminalPaint.target;
+  }
+
+  function paintTerminal(value, immediate = false) {
+    const log = $('#termLog');
+    const flightId = (app.flight || app.lastFlight || {}).id;
+    const changedContext = terminalPaint.flight !== flightId || terminalPaint.lang !== I.getLang();
+    if (value === terminalPaint.target && !immediate && !changedContext) return;
+    const base = terminalPaint.target;
+    stopTerminal(true);
+    terminalPaint.target = value;
+    terminalPaint.flight = flightId;
+    terminalPaint.lang = I.getLang();
+    const announce = () => {
+      const el = $('#terminalAnnouncement');
+      if (el) el.textContent = value.split('\n').filter(Boolean).slice(-1)[0] || '';
+    };
+    if (immediate || instantRender || reduceMotion() || !app.flight || changedContext || !value.startsWith(base)) {
+      log.textContent = value;
+      log.scrollTop = log.scrollHeight;
+      announce();
+      return;
+    }
+    const chars = Array.from(value.slice(base.length));
+    if (!chars.length) return;
+    const started = performance.now();
+    const duration = Math.min(900, Math.max(180, chars.length * 9));
+    log.classList.add('typing');
+    const draw = (now) => {
+      const progress = Math.min(1, (now - started) / duration);
+      let end = Math.ceil(chars.length * progress);
+      // Keep official Latin identifiers intact in Ukrainian accessibility scans.
+      if (I.getLang() === 'uk' && end > 0 && /[A-Za-z0-9-]/.test(chars[end - 1])) {
+        while (end < chars.length && /[A-Za-z0-9-]/.test(chars[end])) end += 1;
+      }
+      log.textContent = base + chars.slice(0, end).join('');
+      log.scrollTop = log.scrollHeight;
+      if (progress < 1) terminalPaint.frame = requestAnimationFrame(draw);
+      else { terminalPaint.frame = 0; log.classList.remove('typing'); announce(); }
+    };
+    terminalPaint.frame = requestAnimationFrame(draw);
+  }
+
+  function finishScore() {
+    cancelAnimationFrame(scoreFrame);
+    scoreFrame = 0;
+    const el = $('#report .big');
+    if (el && scoreTarget !== null) el.textContent = num(scoreTarget, 0);
+  }
+
+  function revealScore(value) {
+    const el = $('#report .big');
+    scoreTarget = value;
+    if (!el) return;
+    const started = performance.now();
+    el.textContent = num(0, 0);
+    el.setAttribute('aria-label', num(value, 0));
+    const draw = (now) => {
+      const p = Math.min(1, (now - started) / 450);
+      el.textContent = num(Math.round(value * (1 - Math.pow(1 - p, 3))), 0);
+      if (p < 1) scoreFrame = requestAnimationFrame(draw);
+      else { scoreFrame = 0; el.textContent = num(value, 0); }
+    };
+    scoreFrame = requestAnimationFrame(draw);
+  }
+
+  function paintBars(html) {
+    cancelAnimationFrame(barsFrame);
+    const prev = $$('#bars .fl').map((el) => el.style.width);
+    $('#bars').innerHTML = html;
+    if (reduceMotion() || instantRender || !prev.length) return;
+    const fills = $$('#bars .fl');
+    const target = fills.map((el) => el.style.width);
+    fills.forEach((el, i) => { el.style.width = prev[i] || '0%'; });
+    barsFrame = requestAnimationFrame(() => {
+      barsFrame = requestAnimationFrame(() => {
+        fills.forEach((el, i) => { if (el.isConnected) el.style.width = target[i]; });
+        barsFrame = 0;
+      });
+    });
+  }
 
   /* ---------- small helpers ---------- */
   const nameOf = (kind, id) => (id ? t(`data.${kind}.${id}.name`) : t('common.none'));
@@ -174,6 +277,8 @@
 
   function go(screen, { focus = true } = {}) {
     if (screen !== app.screen && screen >= 3) $('#toast').hidden = true; // builder messages are stale in flight
+    if (screen !== 3) stopTerminal(true);
+    if (screen !== 4) finishScore();
     app.screen = screen;
     $$('.screen').forEach((s) => s.classList.toggle('active', s.id === `s${screen}`));
     document.body.classList.toggle('builder-on', screen === 2);
@@ -327,6 +432,7 @@
         [t('stat.orbit'), nameOf('orbit', m.requiredOrbitId)]
       ];
       return `<article class="mcard" aria-labelledby="mt-${esc(m.id)}">
+        <svg class="mission-art" data-body="${esc(m.targetBody)}" viewBox="0 0 128 128" aria-hidden="true" focusable="false"><use href="#body-${esc(m.targetBody)}"/></svg>
         <span class="diff ${diff}">${esc(t(`diff.${diff}`))}</span>
         <h2 id="mt-${esc(m.id)}">${esc(nameOf('mission', m.id))}</h2>
         <p>${esc(descOf('mission', m.id))}</p>
@@ -515,7 +621,13 @@
   }
 
   function renderTabs() {
+    const b = app.state.build;
+    const counts = { launch: [Number(!!b.rocketId) + Number(!!b.orbitId), 2],
+      bus: [CATS.filter((c) => !!b.bus[c]).length, CATS.length], inst: [b.instrumentIds.length, MAX_INST] };
     $$('#tabs [data-tab]').forEach((btn) => {
+      const count = counts[btn.dataset.tab];
+      const badge = $('.tab-progress', btn);
+      if (badge) badge.textContent = t('ux.tabProgress', { filled: count[0], total: count[1] });
       const on = btn.dataset.tab === app.tab;
       btn.classList.toggle('on', on);
       btn.setAttribute('aria-selected', String(on));
@@ -525,15 +637,16 @@
   }
 
   function renderCatalog() {
+    clearFlash();
     renderTabs();
     const s = app.state;
     const b = s.build;
     const m = s.mission;
     const body = $('#catalogBody');
     if (app.tab === 'launch') {
-      body.innerHTML = `<h3 class="grp" id="grp-lv">${esc(t('grp.lv'))}</h3><p class="grp-hint">${esc(t('grp.lvHint'))}</p>`
+      body.innerHTML = `<h3 class="grp" id="grp-lv">${icon('rocket')}${esc(t('grp.lv'))}</h3><p class="grp-hint">${esc(t('grp.lvHint'))}</p>`
         + catalog.launchVehicles.map((r) => itemCard('lv', r, { selected: r.id === b.rocketId })).join('')
-        + `<h3 class="grp" id="grp-orbit">${esc(t('grp.orbit'))}</h3><p class="grp-hint">${esc(t('grp.orbitHint'))}</p>`
+        + `<h3 class="grp" id="grp-orbit">${icon('orbit')}${esc(t('grp.orbit'))}</h3><p class="grp-hint">${esc(t('grp.orbitHint'))}</p>`
         + catalog.orbits.map((o) => {
           const required = o.id === m.requiredOrbitId;
           const extra = required ? `<span class="compat ok">✔ ${esc(t('orbit.required'))}</span>`
@@ -541,13 +654,13 @@
           return itemCard('orbit', o, { selected: o.id === b.orbitId, extra, bad: !required });
         }).join('');
     } else if (app.tab === 'bus') {
-      body.innerHTML = CATS.map((c) => `<h3 class="grp" id="grp-${c}">${esc(t(`catTitle.${c}`))}${b.bus[c] ? '' : ` <span class="no">— ${esc(t('slots.empty'))}</span>`}</h3>
+      body.innerHTML = CATS.map((c) => `<h3 class="grp" id="grp-${c}">${icon(c)}${esc(t(`catTitle.${c}`))}${b.bus[c] ? '' : ` <span class="no">— ${esc(t('slots.empty'))}</span>`}</h3>
         <p class="grp-hint">${esc(t(`catHint.${c}`))}</p>`
         + catalog.busComponents.filter((p) => p.category === c)
           .map((p) => itemCard('part', p, { selected: p.id === b.bus[c], category: c })).join('')).join('');
     } else {
       const n = b.instrumentIds.length;
-      body.innerHTML = `<label class="filt"><input type="checkbox" id="fc" ${app.onlyCompat ? 'checked' : ''}> ${esc(t('filter.compat'))}</label>
+      body.innerHTML = `<h3 class="grp" id="grp-inst">${icon('inst')}${esc(t('tab.inst'))}</h3><label class="filt"><input type="checkbox" id="fc" ${app.onlyCompat ? 'checked' : ''}> ${esc(t('filter.compat'))}</label>
         <p class="hint" id="instCount" aria-live="polite">${esc(t('inst.count', { n, max: MAX_INST }))}</p>`
         + catalog.instruments.filter((i) => !app.onlyCompat || i.compatibleTargets.includes(m.targetBody)).map((i) => {
           const ok = i.compatibleTargets.includes(m.targetBody);
@@ -620,19 +733,36 @@
     const s = app.state;
     const b = s.build;
     let filled = 0;
-    // Inner nodes are small, so their labels are shorter; the full names are in the slot list.
-    const LIMIT = { battery: 9, computer: 9, thermal: 17, inst0: 12, inst1: 12, inst2: 12, inst3: 12 };
-    const set = (k, label) => {
+    const tl = s.telemetry;
+    const set = (k, label, warning = false) => {
       const node = $(`#bp .node[data-k="${k}"]`);
       const text = $(`#bp [data-l="${k}"]`);
       node.classList.toggle('on', !!label);
-      text.textContent = label ? cut(label, LIMIT[k] || 22) : '';
+      node.classList.toggle('warn', warning);
+      text.textContent = label;
       if (label) filled += 1;
     };
-    CATS.forEach((c) => set(c, b.bus[c] ? nameOf('part', b.bus[c]) : ''));
+    CATS.forEach((c) => {
+      const part = s.selectedObjects.bus[c];
+      let label = '';
+      if (part) {
+        const n = c === 'chassis' || c === 'computer' ? part.radiationResistance
+          : c === 'power' ? part.powerGeneration : c === 'battery' ? part.batteryCapacity
+            : c === 'comms' ? part.dataTransferRate : c === 'propulsion' ? part.mass : part.powerConsumption;
+        label = t(c === 'chassis' || c === 'computer' ? 'cad.rad' : `cad.${c}`, { n });
+      }
+      const warning = c === 'power' ? tl.power.isPowerDeficit : c === 'battery' ? tl.power.isBatteryDeficit
+        : c === 'comms' ? tl.dataAndComms.isBottlenecked
+          : (c === 'chassis' || c === 'computer') && tl.radiation.isVulnerable
+            && (!part || part.radiationResistance < tl.radiation.requiredRad);
+      set(c, label, !!warning);
+    });
+    $('#bp').dataset.target = s.mission.targetBody;
+    $('#bp .node[data-k="chassis"]').classList.toggle('shielded', b.bus.chassis === 'ch_shielded');
     for (let i = 0; i < MAX_INST; i += 1) {
       const id = b.instrumentIds[i];
-      set(`inst${i}`, id ? abbr(INST.get(id)) : '');
+      const item = id && INST.get(id);
+      set(`inst${i}`, item ? abbr(item) : '', !!item && !item.compatibleTargets.includes(s.mission.targetBody));
     }
     $('#lbMeta').textContent = cut(t('bp.meta', {
       lv: b.rocketId ? nameOf('lv', b.rocketId) : t('common.none'),
@@ -708,15 +838,17 @@
       <div class="team-grid">${Array.from({ length: app.team.size }, (_, i) => {
         const ok = app.team.approvals.includes(i);
         return `<div class="player${ok ? ' ok' : ''}">
+          <div class="station-head"><span>${esc(t('ux.station', { n: i + 1 }))}</span><span class="${ok ? 'station-ready' : ''}" aria-label="${esc(t(ok ? 'ux.stationReady' : 'ux.stationPending'))}">${ok ? '✔' : '○'}</span></div>
           <label class="sr" for="pname${i}">${esc(t('team.nameLabel', { n: i + 1 }))}</label>
           <input id="pname${i}" data-player="${i}" maxlength="24" value="${esc(app.team.names[i])}" placeholder="${esc(t('team.player', { n: i + 1 }))}">
           <ul>${rolesOf(i).map((r) => {
             const a = advisors[r.advisor];
-            return `<li><b>${esc(t(`role.${r.id}.name`))}</b> — ${esc(t(`role.${r.id}.duty`))} <span class="${a.status === 'ok' ? 'ok' : 'no'}">(${esc(t('team.advisorStatus', { status: t(`lvl.${a.status}`) }))})</span></li>`;
+            return `<li><button type="button" class="station-role ${esc(a.status)}" data-act="station" data-role="${r.id}" data-fk="station:${i}:${r.id}" aria-label="${esc(t('ux.focus', { name: t(`role.${r.id}.name`) }))}">${icon(r.id)}<span><b>${esc(t(`role.${r.id}.name`))}</b><small>${esc(t(`role.${r.id}.duty`))}</small><small>${esc(t('team.advisorStatus', { status: t(`lvl.${a.status}`) }))}</small></span></button></li>`;
           }).join('')}</ul>
           <button type="button" class="btn sm ${ok ? '' : 'ghost'}" data-act="approve" data-i="${i}" aria-pressed="${ok}" data-fk="approve:${i}">${esc(ok ? t('team.approved', { name: playerName(i) }) : t('team.approve', { name: playerName(i) }))}</button>
         </div>`;
       }).join('')}</div>
+      <div class="approval-meter" role="img" aria-label="${esc(t('team.status', { a: status.approved, b: status.size }))}">${Array.from({ length: status.size }, (_, i) => '<span class="' + (app.team.approvals.includes(i) ? 'ready' : '') + '"></span>').join('')}</div>
       <p><b>${esc(status.ready ? t('team.ready') : t('team.status', { a: status.approved, b: status.size }))}</b></p>
       <p class="hint">${esc(t('team.rules'))}</p>`;
   }
@@ -742,7 +874,7 @@
     const m = s.mission;
     const slot = ({ key, label, ok, warn, value, tab, target, wide }) => `<button type="button" class="slot ${ok ? (warn ? 'warn' : 'ok') : 'miss'}${wide ? ' wide' : ''}"
       data-act="slot" data-tab="${tab}" data-target="${target || ''}" data-fk="slot:${key}">
-      <span class="ic" aria-hidden="true">${ok ? (warn ? '⚠' : '✔') : '✖'}</span>
+      ${icon(key, 'slot-icon')}<span class="ic" aria-hidden="true">${ok ? (warn ? '⚠' : '✔') : '✖'}</span>
       <span><b>${esc(label)}</b><br>${esc(value)}</span>
       <span class="sr">${esc(ok ? (warn ? t('lvl.warn') : t('slots.done')) : t('slots.empty'))}</span></button>`;
     const n = b.instrumentIds.length;
@@ -818,7 +950,7 @@
         fill: science.percent, marker: null,
         sub: t('bar.science.sub', { raw: num(science.rawPoints), eff: num(science.effectivePoints) }) })
     ];
-    $('#bars').innerHTML = html.join('');
+    paintBars(html.join(''));
   }
 
   function designFactor() {
@@ -951,17 +1083,26 @@
   }
   function jumpTo(tab, target) {
     setTab(tab);
-    const el = target && document.getElementById(target);
+    const el = document.getElementById(target || (tab === 'inst' ? 'grp-inst' : 'grp-lv'));
     const cat = $('#catalog');
+    const behavior = reduceMotion() ? 'auto' : 'smooth';
     if (el) {
-      const top = el.getBoundingClientRect().top - cat.getBoundingClientRect().top + cat.scrollTop - 50;
-      cat.scrollTop = Math.max(0, top);
-      cat.scrollIntoView({ block: 'nearest' });
-    } else {
-      cat.scrollIntoView({ block: 'nearest' });
+      const top = el.getBoundingClientRect().top - cat.getBoundingClientRect().top + cat.scrollTop - 62;
+      cat.scrollTo({ top: Math.max(0, top), behavior });
+      flashNode = el;
+      el.classList.add('flash-target');
+      flashTimer = setTimeout(clearFlash, 1500);
     }
+    cat.scrollIntoView({ block: 'nearest', behavior });
     $(`#tab-${tab}`).focus({ preventScroll: true });
   }
+
+  function focusBlueprintNode(node) {
+    const key = node.dataset.k;
+    if (key.startsWith('inst')) jumpTo('inst', 'grp-inst');
+    else if (CATS.includes(key)) jumpTo('bus', `grp-${key}`);
+  }
+
   function presetCode(missionId, preset) {
     const m = MISSIONS.get(missionId);
     const fields = ['PZ', '1', missionId, currentMode(), preset.rocketId, m.requiredOrbitId, ...CATS.map((c) => preset.bus[c] || '')];
@@ -1113,17 +1254,19 @@
     while (modals.length && !flight.cancelled) await whenNoModals();
     if (flight.cancelled) return false;
     return new Promise((resolve) => {
-      const id = setTimeout(() => { flight.timers.delete(id); resolve(!flight.cancelled); }, ms);
+      const id = setTimeout(() => { flight.timers.delete(id); resolve(!flight.cancelled); }, reduceMotion() ? 0 : ms);
       flight.timers.set(id, resolve);
     });
   }
   function cancelFlight(flight) {
+    stopTerminal(true);
     flight.cancelled = true;
     flight.timers.forEach((resolve, id) => { clearTimeout(id); resolve(false); });
     flight.timers.clear();
     quietWaiters.splice(0).forEach((resolve) => resolve());
   }
-  const delays = () => (reduceMotion() ? { line: 30, status: 40, gap: 60, end: 120 } : { line: 380, status: 650, gap: 450, end: 1100 });
+  // Every event gets enough time for the longest terminal animation (900ms).
+  const delays = () => (reduceMotion() ? { line: 0, status: 0, gap: 0, end: 0 } : { line: 1000, status: 1000, gap: 1000, end: 1100 });
 
   async function launch() {
     if (app.flight) return; // double-click guard
@@ -1236,7 +1379,7 @@
   function renderTerminal() {
     const flight = app.flight || app.lastFlight;
     const log = $('#termLog');
-    if (!flight) { log.textContent = ''; return; }
+    if (!flight) { paintTerminal('', true); return; }
     const phases = E.simulation.phases;
     const lines = flight.events.map((ev) => {
       const p = ev.i != null ? phases[ev.i] : null;
@@ -1251,7 +1394,7 @@
         default: return '';
       }
     });
-    log.textContent = lines.join('\n');
+    paintTerminal(lines.join('\n'));
     log.scrollTop = log.scrollHeight;
   }
 
@@ -1321,6 +1464,7 @@
           <span>${esc(t('cr.after', { a: num(after), b: num(target) }))}${after >= target ? ' ✔' : ' ✖'}</span>
           ${o.requiredRadResistance ? `<span>${esc(t('cr.rad'))}: <b>${esc(num(o.requiredRadResistance))}</b></span>` : ''}
         </span>
+        <span class="chance-meter" aria-hidden="true"><span style="width:${clampPct(o.effectiveSurvivalChance * 100)}%"></span></span>
         ${o.lockReason ? `<span class="why" id="why${i}">${esc(o.lockReason)}</span>` : ''}
       </button>`;
     }).join('');
@@ -1425,6 +1569,7 @@
   }
 
   function renderReport() {
+    finishScore();
     const root = $('#report');
     const r = E.getBlackBoxReport();
     if (!r) {
@@ -1432,6 +1577,12 @@
       return;
     }
     const fk = focusKey();
+    scoreTarget = r.finalScore;
+    const flightId = (app.lastFlight || app.flight || {}).id;
+    const firstView = !!flightId && !scoredFlights.has(flightId);
+    if (flightId) scoredFlights.add(flightId);
+    const animate = firstView && !instantRender && !reduceMotion();
+    root.classList.toggle('instant', !animate);
     const a = r.analysis;
     const sci = a.science;
     const sc = a.score;
@@ -1487,6 +1638,7 @@
           <button type="button" id="newMissionBtn" class="btn ghost" data-fk="rep:missions">${esc(t('rep.newMission'))}</button>
         </div>
         <p class="hint">${esc(t('rep.newFlightNote'))}</p></div>`;
+    if (animate) revealScore(r.finalScore);
     restoreFocus(fk);
   }
 
@@ -1513,6 +1665,8 @@
     } else restoreFocus(fk);
   }
   function renderAll() {
+    instantRender = true;
+    try {
     const fk = focusKey();
     applyStatic();
     $('#toast').hidden = true;
@@ -1522,6 +1676,7 @@
     if (!$('#shareDlg').hidden) renderShareDialog();
     syncHeaderHeight();
     restoreFocus(fk);
+    } finally { instantRender = false; }
   }
 
   /* ---------- events ---------- */
@@ -1547,6 +1702,12 @@
         case 'preview': return togglePreview(d.kind, d.id, d.cat);
         case 'pv-close': { const key = app.preview && app.preview.key; app.preview = null; renderCatalog(); return restoreFocus(key ? `pv:${key}` : null); }
         case 'slot': return jumpTo(d.tab, d.target);
+        case 'station': {
+          const route = { science: ['inst', 'grp-inst'], engineer: ['bus', 'grp-power'],
+            ballistics: ['launch', 'grp-lv'], director: ['bus', 'grp-comms'] }[d.role];
+          if (route) return jumpTo(route[0], route[1]);
+          return undefined;
+        }
         case 'preset': return applyPreset(d.id);
         case 'copy': return copyFrom(d.src);
         case 'open-share': return openShare();
@@ -1559,6 +1720,34 @@
         default: return undefined;
       }
     });
+  });
+
+  $('#bp').addEventListener('click', (event) => {
+    const node = event.target.closest('.node[data-k]');
+    if (node) act(() => focusBlueprintNode(node));
+  });
+  $('#bp').addEventListener('keydown', (event) => {
+    const node = event.target.closest('.node[data-k]');
+    if (node && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault(); act(() => focusBlueprintNode(node));
+    }
+  });
+  $('#termLog').setAttribute('aria-live', 'off');
+  $('#termLog').addEventListener('click', () => paintTerminal(terminalPaint.target, true));
+  $('#termLog').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); paintTerminal(terminalPaint.target, true); }
+  });
+  const motionQuery = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (motionQuery && motionQuery.addEventListener) motionQuery.addEventListener('change', () => {
+    if (reduceMotion()) {
+      stopTerminal(true);
+      finishScore();
+      if (app.screen === 2 && hasMission()) renderBars();
+      if (app.flight) {
+        app.flight.timers.forEach((resolve, id) => { clearTimeout(id); resolve(!app.flight.cancelled); });
+        app.flight.timers.clear();
+      }
+    }
   });
 
   $('#tabs').addEventListener('click', (event) => {

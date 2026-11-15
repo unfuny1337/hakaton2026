@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<svg class="svg-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="icon-rocket" viewBox="0 0 24 24"><path d="M9 16V8c0-3 3-6 3-6s3 3 3 6v8M9 12l-4 5v3l4-2m6-6 4 5v3l-4-2M10 21l2 2 2-2"/><circle cx="12" cy="9" r="1.5"/></symbol><symbol id="icon-orbit" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="11" ry="5" transform="rotate(-35 12 12)"/><circle cx="12" cy="12" r="4"/><circle cx="20" cy="5" r="2"/></symbol><symbol id="icon-chassis" viewBox="0 0 24 24"><path d="M7 3h10l4 4v10l-4 4H7l-4-4V7zM7 3l10 18M17 3 7 21M3 7l18 10M3 17 21 7"/></symbol><symbol id="icon-power" viewBox="0 0 24 24"><path d="M2 6h7v12H2zM15 6h7v12h-7zM9 12h6M5 6v12M19 6v12M2 10h7M2 14h7M15 10h7M15 14h7"/><circle cx="12" cy="12" r="2"/></symbol><symbol id="icon-battery" viewBox="0 0 24 24"><rect x="3" y="6" width="17" height="12" rx="2"/><path d="M20 10h2v4h-2M7 9v6M11 9v6M15 9v6"/></symbol><symbol id="icon-comms" viewBox="0 0 24 24"><path d="M4 7q0 12 13 13zM9 13l7-7m-7 14-2 3M16 2a6 6 0 0 1 6 6M16 6a2 2 0 0 1 2 2"/><circle cx="16" cy="6" r="1"/></symbol><symbol id="icon-computer" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/><path d="M9 9h6v6H9zM9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4M18 9h4m-4 6h4"/></symbol><symbol id="icon-propulsion" viewBox="0 0 24 24"><path d="M9 2h6v5l5 11H4L9 7zM8 10h8M6 15h12M8 21l-1 2m5-3v3m4-2 1 2"/></symbol><symbol id="icon-thermal" viewBox="0 0 24 24"><path d="M3 4h18v16H3zM7 4v16M11 4v16M15 4v16M19 4v16M1 8h2m18 0h2M1 16h2m18 0h2"/></symbol><symbol id="icon-inst" viewBox="0 0 24 24"><path d="m5 16 8-12 7 5-8 12zM10 8l7 5M3 15l10 7M6 19l-3 4M17 3l3-2m1 6 2-1"/></symbol><symbol id="icon-science" viewBox="0 0 24 24"><path d="M9 2h6m-5 0v7L4 20q-1 2 2 2h12q3 0 2-2l-6-11V2M7 15h10"/><circle cx="11" cy="18" r="1"/></symbol><symbol id="icon-engineer" viewBox="0 0 24 24"><path d="m14 3 4-1-1 4-4 4 1 3 7 7-2 2-7-7-3-1-4 4-3-1 1-4 4-4 3 1z"/></symbol><symbol id="icon-ballistics" viewBox="0 0 24 24"><path d="M2 21h20M4 18C4 9 10 3 20 3m-5 0h5v5M4 18l3-2m1-7 3 2m4-7 1 3"/></symbol><symbol id="icon-director" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v5m0 12v5M1 12h5m12 0h5M4 4l4 4m8 8 4 4M20 4l-4 4M8 16l-4 4"/></symbol><symbol id="body-Moon" viewBox="0 0 128 128"><circle cx="64" cy="64" r="43"/><ellipse cx="64" cy="64" rx="58" ry="18" transform="rotate(-28 64 64)"/><circle cx="49" cy="48" r="10"/><circle cx="80" cy="77" r="13"/><circle cx="41" cy="82" r="5"/><circle cx="81" cy="40" r="5"/><path d="M23 64h82M64 21v86" opacity=".3"/></symbol><symbol id="body-Mars" viewBox="0 0 128 128"><circle cx="64" cy="64" r="41"/><ellipse cx="64" cy="64" rx="20" ry="58" transform="rotate(20 64 64)"/><path d="M45 30q19 12 37-2M33 70l17-7 17 8 22-12M48 93l17-8 20 7"/><circle cx="44" cy="45" r="5"/><circle cx="84" cy="92" r="4"/></symbol><symbol id="body-Earth" viewBox="0 0 128 128"><circle cx="64" cy="64" r="43"/><ellipse cx="64" cy="64" rx="21" ry="43"/><path d="M21 64h86M27 43h74M27 85h74M64 21v86M37 40l12 9-4 13 11 9-5 16M78 31l-8 15 10 9 12-5M80 71l12 9-8 10"/></symbol></defs></svg>
 <a class="skip" href="#main" data-i18n="a11y.skip">Skip to content</a>
 <header class="top" id="top">
   <div class="logo"><b>PAYLOAD ZERO</b><span data-i18n="app.tagline"></span></div>
@@ -45,12 +46,17 @@
   </section>
 
   <section id="s2" class="screen" aria-labelledby="missionTitle">
+    <ol class="stepbar" data-i18n-attr="aria-label:ux.route">
+      <li><span class="step-no" aria-hidden="true">01</span><div><b data-i18n="ux.step1.title"></b><span data-i18n="ux.step1.desc"></span></div><svg class="ui-icon" aria-hidden="true"><use href="#icon-chassis"/></svg></li>
+      <li><span class="step-no" aria-hidden="true">02</span><div><b data-i18n="ux.step2.title"></b><span data-i18n="ux.step2.desc"></span></div><svg class="ui-icon" aria-hidden="true"><use href="#icon-computer"/></svg></li>
+      <li><span class="step-no" aria-hidden="true">03</span><div><b data-i18n="ux.step3.title"></b><span data-i18n="ux.step3.desc"></span></div><svg class="ui-icon" aria-hidden="true"><use href="#icon-rocket"/></svg></li>
+    </ol>
     <div class="builder">
       <aside class="col catalog" id="catalog" data-i18n-attr="aria-label:catalog.aria">
         <div class="tabs" id="tabs" role="tablist" data-i18n-attr="aria-label:catalog.tabs">
-          <button type="button" role="tab" id="tab-launch" data-tab="launch" aria-controls="catalogBody" class="on" aria-selected="true" data-i18n="tab.launch"></button>
-          <button type="button" role="tab" id="tab-bus" data-tab="bus" aria-controls="catalogBody" aria-selected="false" tabindex="-1" data-i18n="tab.bus"></button>
-          <button type="button" role="tab" id="tab-inst" data-tab="inst" aria-controls="catalogBody" aria-selected="false" tabindex="-1" data-i18n="tab.inst"></button>
+          <button type="button" role="tab" id="tab-launch" data-tab="launch" aria-controls="catalogBody" class="on" aria-selected="true"><span data-i18n="tab.launch"></span><span class="tab-progress" aria-hidden="true"></span></button>
+          <button type="button" role="tab" id="tab-bus" data-tab="bus" aria-controls="catalogBody" aria-selected="false" tabindex="-1"><span data-i18n="tab.bus"></span><span class="tab-progress" aria-hidden="true"></span></button>
+          <button type="button" role="tab" id="tab-inst" data-tab="inst" aria-controls="catalogBody" aria-selected="false" tabindex="-1"><span data-i18n="tab.inst"></span><span class="tab-progress" aria-hidden="true"></span></button>
         </div>
         <p class="legend" data-i18n="legend.marks"></p>
         <div id="catalogBody" role="tabpanel" aria-labelledby="tab-launch"></div>
@@ -60,33 +66,72 @@
         <div class="panel">
           <h2 class="ptitle" id="missionTitle">Blueprint</h2>
           <p id="goalLine" class="goal"></p>
-          <svg id="bp" viewBox="0 0 420 300" role="img" aria-labelledby="bpDesc">
+          <svg id="bp" viewBox="0 0 420 300" role="group" aria-labelledby="bpDesc" data-target="Moon">
             <title id="bpDesc"></title>
-            <defs><pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#1E293B" stroke-width=".6"/></pattern></defs>
-            <rect width="420" height="300" fill="url(#g)"/>
-            <text id="lbMeta" x="10" y="16" class="lb meta"></text>
-            <g class="node" data-k="power"><rect x="30" y="135" width="110" height="40"/><rect x="280" y="135" width="110" height="40"/><path d="M58 135v40M85 135v40M112 135v40M308 135v40M335 135v40M362 135v40"/></g>
-            <g class="node" data-k="chassis"><rect x="160" y="100" width="100" height="110"/></g>
-            <g class="node" data-k="comms"><path d="M210 100V72"/><ellipse cx="210" cy="62" rx="30" ry="10"/></g>
-            <g class="node" data-k="propulsion"><polygon points="190,210 230,210 244,248 176,248"/></g>
-            <g class="node" data-k="battery"><rect x="170" y="110" width="38" height="26"/></g>
-            <g class="node" data-k="computer"><rect x="212" y="110" width="38" height="26"/></g>
-            <g class="node" data-k="thermal"><rect x="170" y="176" width="80" height="16"/></g>
-            <g class="node" data-k="inst0"><rect x="20" y="262" width="88" height="24"/></g>
-            <g class="node" data-k="inst1"><rect x="116" y="262" width="88" height="24"/></g>
-            <g class="node" data-k="inst2"><rect x="212" y="262" width="88" height="24"/></g>
-            <g class="node" data-k="inst3"><rect x="308" y="262" width="88" height="24"/></g>
-            <text class="lb" data-l="power" x="30" y="192"></text>
-            <text class="lb" data-l="chassis" x="150" y="94" text-anchor="end"></text>
-            <text class="lb" data-l="comms" x="246" y="58"></text>
-            <text class="lb" data-l="propulsion" x="252" y="236"></text>
-            <text class="lb in" data-l="battery" x="189" y="126" text-anchor="middle"></text>
-            <text class="lb in" data-l="computer" x="231" y="126" text-anchor="middle"></text>
-            <text class="lb in" data-l="thermal" x="210" y="187" text-anchor="middle"></text>
-            <text class="lb in" data-l="inst0" x="64" y="277" text-anchor="middle"></text>
-            <text class="lb in" data-l="inst1" x="160" y="277" text-anchor="middle"></text>
-            <text class="lb in" data-l="inst2" x="256" y="277" text-anchor="middle"></text>
-            <text class="lb in" data-l="inst3" x="352" y="277" text-anchor="middle"></text>
+            <defs>
+              <pattern id="cadMinor" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M5 0H0V5" class="grid-minor"/></pattern>
+              <pattern id="g" width="25" height="25" patternUnits="userSpaceOnUse"><rect width="25" height="25" fill="url(#cadMinor)"/><path d="M25 0H0V25" class="grid-major"/></pattern>
+              <pattern id="cadCells" width="9" height="8" patternUnits="userSpaceOnUse"><path d="M9 0H0V8"/></pattern>
+              <linearGradient id="cadHull" x2="1" y2="1"><stop stop-color="#00F0FF" stop-opacity=".13"/><stop offset="1" stop-color="#00F0FF" stop-opacity=".02"/></linearGradient>
+            </defs>
+            <rect class="cad-backdrop" width="420" height="300" fill="url(#g)"/>
+            <g class="cad-background" aria-hidden="true">
+              <use class="target-body target-Earth" href="#body-Earth" x="324" y="30" width="82" height="82"/>
+              <use class="target-body target-Moon" href="#body-Moon" x="324" y="30" width="82" height="82"/>
+              <use class="target-body target-Mars" href="#body-Mars" x="324" y="30" width="82" height="82"/>
+              <ellipse class="cad-orbit" cx="210" cy="150" rx="184" ry="112"/>
+              <circle class="orbit-motion" r="2"/>
+              <path class="cad-frame" d="M8 33V23h20M392 23h20v10M8 267v22h20M392 289h20v-22M205 23h10m-5-5v10M205 289h10m-5-5v10"/>
+            </g>
+            <text id="lbMeta" x="10" y="12" class="lb meta"></text>
+            <g class="node" data-k="chassis" role="button" tabindex="0" data-i18n-attr="aria-label:cad.focus.chassis">
+              <path class="shield-outline" d="M178 99h64l25 25v53l-25 25h-64l-25-25v-53z"/>
+              <path class="hull" d="M181 107h58l20 20v45l-20 21h-58l-20-21v-45z"/>
+              <path d="M181 107v86M239 107v86M161 127h98M161 172h98M161 127l20-20m58 0 20 20M161 172l20 21m58 0 20-21M164 151h12m68 0h12"/>
+              <circle cx="174" cy="119" r="1.5"/><circle cx="246" cy="119" r="1.5"/><circle cx="174" cy="180" r="1.5"/><circle cx="246" cy="180" r="1.5"/>
+            </g>
+            <g class="node" data-k="power" role="button" tabindex="0" data-i18n-attr="aria-label:cad.focus.power">
+              <path d="M143 147h18m98 0h18M143 158h18m98 0h18"/>
+              <rect class="solar-cell" x="43" y="133" width="100" height="38" rx="1"/><rect class="solar-cell" x="277" y="133" width="100" height="38" rx="1"/>
+              <path d="M76 133v38m34-38v38m200-38v38m33-38v38"/>
+              <path class="energy-flow" d="M48 152h111m213 0H261"/>
+            </g>
+            <g class="node" data-k="comms" role="button" tabindex="0" data-i18n-attr="aria-label:cad.focus.comms">
+              <path d="M205 107V90h10v17M185 73q25 36 50 0zM185 73q25 13 50 0M210 89V68m-4-4 4 4 4-4"/>
+              <ellipse cx="210" cy="73" rx="25" ry="5"/>
+              <path class="radio-wave wave-1" d="M194 57q16-12 32 0"/><path class="radio-wave wave-2" d="M187 48q23-18 46 0"/><path class="radio-wave wave-3" d="M180 39q30-24 60 0"/>
+            </g>
+            <g class="node" data-k="battery" role="button" tabindex="0" data-i18n-attr="aria-label:cad.focus.battery">
+              <rect x="180" y="132" width="28" height="21" rx="2"/><path d="M185 136v13m6-13v13m6-13v13m6-13v13M190 129h8v3"/>
+            </g>
+            <g class="node" data-k="computer" role="button" tabindex="0" data-i18n-attr="aria-label:cad.focus.computer">
+              <rect x="216" y="132" width="23" height="21" rx="1"/><rect x="222" y="137" width="11" height="10"/>
+              <path d="M220 129v3m5-3v3m5-3v3m5-3v3M220 153v3m5-3v3m5-3v3m5-3v3M213 137h3m-3 5h3m-3 5h3m23-10h3m-3 5h3m-3 5h3"/>
+            </g>
+            <g class="node" data-k="thermal" role="button" tabindex="0" data-i18n-attr="aria-label:cad.focus.thermal">
+              <rect x="180" y="163" width="59" height="16" rx="2"/><path d="M183 167h49q5 0 0 4h-44q-5 0 0 4h46M187 160v3m8-3v3m8-3v3m8-3v3m8-3v3m8-3v3m8-3v3"/>
+            </g>
+            <g class="node" data-k="propulsion" role="button" tabindex="0" data-i18n-attr="aria-label:cad.focus.propulsion">
+              <path d="M202 193v10h16v-10M202 203l-14 29h44l-14-29M197 213h26m-30 10h34M194 193v14h-7m39-14v14h7"/>
+              <path class="exhaust" d="m193 236-5 15m22-15v18m17-18 5 15M198 237l-2 9m28-9 2 9"/>
+            </g>
+            <g class="cad-mounts" aria-hidden="true"><path d="m179 185-75 57H67m127-49-31 49m62-49 32 49m-14-57 75 57h35"/></g>
+            <g class="node" data-k="inst0" role="button" tabindex="0" data-i18n-attr="aria-label:cad.focus.inst"><path d="M54 241h26v24H54zM50 247h34M59 241v-6h16v6"/><circle cx="67" cy="254" r="7"/><circle cx="67" cy="254" r="3"/></g>
+            <g class="node" data-k="inst1" role="button" tabindex="0" data-i18n-attr="aria-label:cad.focus.inst"><path d="M149 241h26v24h-26zM145 247h34M154 241v-6h16v6"/><circle cx="162" cy="254" r="7"/><circle cx="162" cy="254" r="3"/></g>
+            <g class="node" data-k="inst2" role="button" tabindex="0" data-i18n-attr="aria-label:cad.focus.inst"><path d="M245 241h26v24h-26zM241 247h34M250 241v-6h16v6"/><circle cx="258" cy="254" r="7"/><circle cx="258" cy="254" r="3"/></g>
+            <g class="node" data-k="inst3" role="button" tabindex="0" data-i18n-attr="aria-label:cad.focus.inst"><path d="M340 241h26v24h-26zM336 247h34M345 241v-6h16v6"/><circle cx="353" cy="254" r="7"/><circle cx="353" cy="254" r="3"/></g>
+            <g class="cad-leaders" aria-hidden="true"><path d="M85 133v-17H10M235 77h46M259 165h27l14 18h108M180 143h-28l-18 52H10M239 143h34l27 60h108M239 171h30l31 50h108M193 222h-38l-16-2H10"/></g>
+            <text class="lb" data-l="power" x="10" y="111"></text>
+            <text class="lb" data-l="comms" x="282" y="74"></text>
+            <text class="lb" data-l="chassis" x="302" y="180"></text>
+            <text class="lb" data-l="battery" x="10" y="192"></text>
+            <text class="lb" data-l="computer" x="302" y="200"></text>
+            <text class="lb" data-l="thermal" x="302" y="218"></text>
+            <text class="lb" data-l="propulsion" x="10" y="217"></text>
+            <text class="lb" data-l="inst0" x="67" y="281" text-anchor="middle"></text>
+            <text class="lb" data-l="inst1" x="162" y="281" text-anchor="middle"></text>
+            <text class="lb" data-l="inst2" x="258" y="281" text-anchor="middle"></text>
+            <text class="lb" data-l="inst3" x="353" y="281" text-anchor="middle"></text>
           </svg>
         </div>
         <div class="panel" id="teamPanel" hidden></div>
@@ -118,6 +163,7 @@
     <p class="hint" data-i18n="s3.lockNote"></p>
     <ol id="phaseTrack" class="track" data-i18n-attr="aria-label:s3.track"></ol>
     <pre id="termLog" class="term" aria-live="polite" tabindex="0" data-i18n-attr="aria-label:s3.log"></pre>
+    <div id="terminalAnnouncement" class="sr" aria-live="polite" aria-atomic="true"></div>
     <div class="row">
       <button type="button" id="abortBtn" class="btn ghost" data-i18n="s3.abort"></button>
       <button type="button" id="toReportBtn" class="btn" hidden data-i18n="s3.report"></button>

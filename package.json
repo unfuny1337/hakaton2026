@@ -5,7 +5,7 @@
   "description": "PAYLOAD ZERO — browser space mission design game (NASA Space Apps Challenge 2026). No runtime or dev dependencies: tests use Node built-ins and a locally installed Chromium-based browser.",
   "scripts": {
     "check:syntax": "node tests/syntax-check.js",
-    "test:unit": "node --test tests/engine.test.js tests/i18n.test.js tests/balance.test.js",
+    "test:unit": "node --test tests/engine.test.js tests/i18n.test.js tests/balance.test.js tests/presentation.test.js",
     "test:e2e": "node tests/ui.e2e.js",
     "audit:balance": "node tests/balance-audit.js",
     "serve": "node tests/serve.js",
