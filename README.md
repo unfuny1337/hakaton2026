@@ -224,4 +224,8 @@ The other Space Apps resources (GMAT, CML, Mission Design Lab, Mission Viz, Webb
 
 ## AI usage disclosure
 
-This implementation pass was produced with **Claude Code (Anthropic)**. It read the challenge text, the participant manual and the two NASA PDFs, rewrote the engine’s localization layer, rebuilt the UI flow, rebalanced game data, wrote the tests and this README. The team should review the result and add any other AI tools they actually used, and what for, before submitting. See [`docs/SUBMISSION_NOTES.md`](docs/SUBMISSION_NOTES.md) for submission-ready notes.
+PAYLOAD ZERO was developed using a collaborative, prompt-driven workflow combining three AI tools, each assigned to specific engineering and documentation tasks:
+
+- **Google Gemini** — used for initial brainstorming, four-screen game architecture planning, mathematical modeling of spacecraft resource trade-offs (transfer mass multipliers, solar efficiency scaling, eclipse battery sizing, and downlink bottlenecks), balance auditing, and structuring project documentation.
+- **Claude & Claude Code (Anthropic)** — used to implement and refine the pure JavaScript simulation engine (`engine.js`), bilingual localization layer (`i18n.js`, `i18n-dict.js`), interactive builder and flight runner (`ui.js`), launch-ready presets (`presets.js`), and the zero-dependency Node/Chromium unit, balance, and E2E test suites.
+- **ChatGPT & Codex (OpenAI)** — used to curate and format NASA reference parameters in `nasa_data.js` (separating `verifiedSpecs` from `gameOnlyFields`), enhance the tactical HUD styling (`style.css`), interactive CAD SVG spacecraft blueprint and terminal animations (`index.html`, `ui.js`), and proofread English presentation and submission materials.
